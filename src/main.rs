@@ -7,6 +7,7 @@ use langchain_rust::{
     prompt_args,
 };
 use std::env;
+use tokio_stream::{self as stream, StreamExt};
 
 #[tokio::main]
 async fn main() {
@@ -49,11 +50,17 @@ async fn main() {
     let inputs = prompt_args! {
         "问题" => "冬季推荐一款菜"
     };
-    let result = chain.call(inputs).await.unwrap();
-
+    let mut result = chain.stream(inputs).await.unwrap();
     println!(
         "问题：冬季推荐一款菜"
     );
     println!("\nDeepseek回复:");
-    println!("{}", result.generation);
+    while let Some(result) = result.next().await {
+        match result {
+            Ok(value) => {
+                print!("{}", value.content);
+            },
+            Err(_e) => {},
+        }
+    };
 }
